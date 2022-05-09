@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_example/models/ModelProvider.dart';
 import 'package:flutter/material.dart';
@@ -146,6 +148,46 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // Future<void> subscribe() async {
+  //   final subscriptionRequest = ModelSubscriptions.onCreate(Todo.classType);
+  //   final Stream<GraphQLResponse<Todo>> operation = Amplify.API.subscribe(
+  //     subscriptionRequest,
+  //     onEstablished: () => print('Subscription established'),
+  //   );
+
+  //   try {
+  //     // Retrieve 5 events from the subscription
+  //     var i = 0;
+  //     await for (var event in operation) {
+  //       i++;
+  //       print('Subscription event data received: ${event.data}');
+  //       if (i == 5) {
+  //         break;
+  //       }
+  //     }
+  //   } on Exception catch (e) {
+  //     print('Error in subscription stream: $e');
+  //   }
+  // }
+
+  Future<void> subscribe() async {
+    final subscriptionRequest = ModelSubscriptions.onCreate(Todo.classType);
+    final Stream<GraphQLResponse<Todo>> operation = Amplify.API.subscribe(
+      subscriptionRequest,
+      onEstablished: () => print('Subscription established'),
+    );
+    final StreamSubscription<GraphQLResponse<Todo>> subscription =
+        operation.listen(
+      (event) {
+        print('Subscription event data received: ${event.data}');
+      },
+      onError: (Object e) => print('Error in subscription stream: $e'),
+    );
+
+    // Cancel the subscription and close the underlying stream.
+    subscription.cancel();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,7 +209,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async => await _fetchTodos(),
+        onPressed: () async => await subscribe(),
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
