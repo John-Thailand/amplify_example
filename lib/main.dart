@@ -77,10 +77,30 @@ class _MyHomePageState extends State<MyHomePage> {
         print('errors: ' + response.errors.toString());
         return;
       }
+      // update Todo
+      await _updateTodo(createdTodo);
       print('Mutation result: ' + createdTodo.name);
     } on ApiException catch (e) {
       print('Mutation failed: $e');
     }
+  }
+
+  Future<void> _updateTodo(Todo createdTodo) async {
+    final todoWithNewName = createdTodo.copyWith(name: 'new name');
+
+    final request = ModelMutations.update(todoWithNewName);
+    final response = await Amplify.API.mutate(request: request).response;
+
+    await _deleteTodo(todoWithNewName);
+  }
+
+  Future<void> _deleteTodo(Todo todoWithNewName) async {
+    final request = ModelMutations.delete(todoWithNewName);
+    final response = await Amplify.API.mutate(request: request).response;
+
+    // or delete by ID, ideal if you do not have the instance in memory, yet
+    // final request = ModelMutations.deleteById(Todo.classType, todoWithNewName.id);
+    // final response = await Amplify.API.mutate(request: request).response;
   }
 
   @override
