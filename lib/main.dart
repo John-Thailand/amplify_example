@@ -3,8 +3,6 @@ import 'package:amplify_example/models/ModelProvider.dart';
 import 'package:flutter/material.dart';
 // Amplify Flutter Packages
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_analytics_pinpoint/amplify_analytics_pinpoint.dart';
-import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 
 // Generated in previous step
 import 'package:amplify_example/amplifyconfiguration.dart';
@@ -78,7 +76,9 @@ class _MyHomePageState extends State<MyHomePage> {
         return;
       }
       // update Todo
-      await _updateTodo(createdTodo);
+      // await _updateTodo(createdTodo);
+      // fetch Todo
+      // await _fetchTodo(createdTodo);
       print('Mutation result: ' + createdTodo.name);
     } on ApiException catch (e) {
       print('Mutation failed: $e');
@@ -103,6 +103,49 @@ class _MyHomePageState extends State<MyHomePage> {
     // final response = await Amplify.API.mutate(request: request).response;
   }
 
+  Future<void> _fetchTodo(Todo createdTodo) async {
+    try {
+      final request = ModelQueries.get(Todo.classType, createdTodo.id);
+      final response = await Amplify.API.query(request: request).response;
+      Todo? todo = response.data;
+      if (todo == null) {
+        print('errors: ' + response.errors.toString());
+        return;
+      }
+      print('Query result: ' + todo.name);
+    } on ApiException catch (e) {
+      print('Query failed: $e');
+    }
+  }
+
+  Future<void> _fetchTodos() async {
+    try {
+      final request = ModelQueries.list(Todo.classType);
+      final response = await Amplify.API.query(request: request).response;
+
+      List<Todo?>? todos = response.data?.items;
+      if (todos == null) {
+        print('errors: ' + response.errors.toString());
+        return;
+      }
+      print('Query resule: ' + todos.toString());
+    } on ApiException catch (e) {
+      print('Query failed: $e');
+    }
+  }
+
+  Future<void> _listSubsequentPagesOfItems() async {
+    const limit = 100;
+    final firstReq = ModelQueries.list<Todo>(Todo.classType, limit: limit);
+    final firstRes = await Amplify.API.query(request: firstReq).response;
+    final firstPageData = firstRes.data;
+    // Indicates there are > 100 todos and we can get the request for the next set.
+    if (firstPageData?.hasNextResult == true) {
+      final secondReq = firstPageData!.requestForNextResult;
+      final secondRes = await Amplify.API.query(request: secondReq!).response;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,7 +167,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async => await _createTodo(),
+        onPressed: () async => await _fetchTodos(),
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
