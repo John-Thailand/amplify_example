@@ -1,3 +1,5 @@
+import 'package:amplify_api/amplify_api.dart';
+import 'package:amplify_example/models/ModelProvider.dart';
 import 'package:flutter/material.dart';
 // Amplify Flutter Packages
 import 'package:amplify_flutter/amplify_flutter.dart';
@@ -51,10 +53,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _configureAmplify() async {
-    // Add Pinpoint and Cognito Plugins, or any other plugins you want to use
-    AmplifyAnalyticsPinpoint analyticsPlugin = AmplifyAnalyticsPinpoint();
-    AmplifyAuthCognito authPlugin = AmplifyAuthCognito();
-    await Amplify.addPlugins([authPlugin, analyticsPlugin]);
+    // Add the following line to add API plugin to your app
+    await Amplify.addPlugin(AmplifyAPI(modelProvider: ModelProvider.instance));
 
     // Once Plugins are added, configure Amplify
     // Note: Amplify can only be configured once.
@@ -63,6 +63,23 @@ class _MyHomePageState extends State<MyHomePage> {
     } on AmplifyAlreadyConfiguredException {
       print(
           "Tried to reconfigure Amplify; this can occur when your app restarts on Android.");
+    }
+  }
+
+  Future<void> _createTodo() async {
+    try {
+      Todo todo = Todo(name: 'my first todo', description: 'todo description');
+      final request = ModelMutations.create(todo);
+      final response = await Amplify.API.mutate(request: request).response;
+
+      Todo? createdTodo = response.data;
+      if (createdTodo == null) {
+        print('errors: ' + response.errors.toString());
+        return;
+      }
+      print('Mutation result: ' + createdTodo.name);
+    } on ApiException catch (e) {
+      print('Mutation failed: $e');
     }
   }
 
@@ -87,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () async => await _createTodo(),
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
